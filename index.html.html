@@ -1,0 +1,492 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-sans); background: transparent; color: var(--color-text-primary); font-size: 15px; }
+
+.app { display: flex; flex-direction: column; min-height: 100vh; }
+
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px; border-bottom: 0.5px solid var(--color-border-tertiary);
+  background: var(--color-background-primary);
+}
+.topbar-title { font-size: 15px; font-weight: 500; display: flex; align-items: center; gap: 8px; }
+.badge-store { background: var(--color-background-info); color: var(--color-text-info); font-size: 11px; padding: 2px 8px; border-radius: var(--border-radius-md); }
+
+.tabs { display: flex; gap: 2px; padding: 0 20px; border-bottom: 0.5px solid var(--color-border-tertiary); background: var(--color-background-primary); }
+.tab { padding: 10px 14px; font-size: 13px; cursor: pointer; border: none; background: none; color: var(--color-text-secondary); border-bottom: 2px solid transparent; transition: all 0.15s; }
+.tab.active { color: var(--color-text-primary); border-bottom-color: var(--color-text-primary); font-weight: 500; }
+.tab:hover { color: var(--color-text-primary); }
+
+.content { flex: 1; padding: 20px; overflow-y: auto; }
+
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* Asistente */
+.chat-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 16px; }
+.card-title { font-size: 13px; font-weight: 500; color: var(--color-text-secondary); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+textarea { width: 100%; border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 10px 12px; font-size: 14px; font-family: var(--font-sans); background: var(--color-background-secondary); color: var(--color-text-primary); resize: vertical; min-height: 120px; }
+textarea:focus { outline: none; border-color: var(--color-border-primary); }
+.btn { padding: 8px 16px; border-radius: var(--border-radius-md); font-size: 13px; cursor: pointer; border: 0.5px solid var(--color-border-secondary); background: var(--color-background-primary); color: var(--color-text-primary); transition: all 0.15s; }
+.btn:hover { background: var(--color-background-secondary); }
+.btn:active { transform: scale(0.98); }
+.btn-primary { background: var(--color-text-primary); color: var(--color-background-primary); border-color: var(--color-text-primary); }
+.btn-primary:hover { opacity: 0.85; }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+
+.response-box { min-height: 120px; background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 12px; font-size: 14px; line-height: 1.6; color: var(--color-text-primary); white-space: pre-wrap; }
+.response-placeholder { color: var(--color-text-tertiary); font-style: italic; }
+.copy-row { display: flex; justify-content: flex-end; margin-top: 8px; gap: 8px; }
+
+.loading-dots { display: inline-flex; gap: 4px; }
+.loading-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--color-text-tertiary); animation: bounce 1s ease-in-out infinite; }
+.loading-dots span:nth-child(2) { animation-delay: 0.15s; }
+.loading-dots span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes bounce { 0%,80%,100% { opacity: 0.3; transform: scale(0.8); } 40% { opacity: 1; transform: scale(1); } }
+
+/* Historial */
+.history-list { display: flex; flex-direction: column; gap: 8px; }
+.history-item { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 12px 14px; cursor: pointer; }
+.history-item:hover { border-color: var(--color-border-secondary); }
+.history-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.history-time { font-size: 11px; color: var(--color-text-tertiary); }
+.history-preview { font-size: 13px; color: var(--color-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.empty-state { text-align: center; padding: 40px; color: var(--color-text-tertiary); font-size: 14px; }
+
+/* Productos */
+.products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.product-card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 14px; }
+.product-name { font-weight: 500; font-size: 14px; margin-bottom: 4px; }
+.product-price { font-size: 18px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 8px; }
+.product-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+.tag { font-size: 11px; padding: 2px 7px; border-radius: 20px; background: var(--color-background-secondary); color: var(--color-text-secondary); border: 0.5px solid var(--color-border-tertiary); }
+.product-desc { font-size: 12px; color: var(--color-text-secondary); line-height: 1.5; }
+.add-product-form { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 16px; margin-bottom: 16px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.form-group { display: flex; flex-direction: column; gap: 4px; }
+.form-group.full { grid-column: 1 / -1; }
+label { font-size: 12px; color: var(--color-text-secondary); font-weight: 500; }
+input[type=text], input[type=number] { border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 7px 10px; font-size: 13px; background: var(--color-background-secondary); color: var(--color-text-primary); }
+input:focus { outline: none; border-color: var(--color-border-primary); }
+.stock-badge { display: inline-block; font-size: 11px; padding: 2px 7px; border-radius: 20px; }
+.stock-ok { background: var(--color-background-success); color: var(--color-text-success); }
+.stock-low { background: var(--color-background-warning); color: var(--color-text-warning); }
+.stock-out { background: var(--color-background-danger); color: var(--color-text-danger); }
+.section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.section-title { font-size: 14px; font-weight: 500; }
+
+/* Info tienda */
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.info-section { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 16px; }
+.info-section-title { font-size: 12px; font-weight: 500; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+.info-field { margin-bottom: 10px; }
+.info-label { font-size: 12px; color: var(--color-text-tertiary); margin-bottom: 3px; }
+.info-value { font-size: 13px; }
+.save-row { display: flex; justify-content: flex-end; margin-top: 12px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="topbar-title">
+      <i class="ti ti-shirt" style="font-size:18px" aria-hidden="true"></i>
+      Asistente de Ventas
+      <span class="badge-store" id="store-badge">Mi Tienda</span>
+    </div>
+    <span style="font-size:12px; color:var(--color-text-tertiary)">MVP v1.0</span>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('asistente')"><i class="ti ti-message-circle" style="font-size:14px; vertical-align:-1px; margin-right:4px"></i>Asistente</button>
+    <button class="tab" onclick="showTab('productos')"><i class="ti ti-shirt" style="font-size:14px; vertical-align:-1px; margin-right:4px"></i>Productos</button>
+    <button class="tab" onclick="showTab('tienda')"><i class="ti ti-building-store" style="font-size:14px; vertical-align:-1px; margin-right:4px"></i>Info Tienda</button>
+    <button class="tab" onclick="showTab('historial')"><i class="ti ti-history" style="font-size:14px; vertical-align:-1px; margin-right:4px"></i>Historial <span id="history-count" style="background:var(--color-background-secondary);border-radius:20px;padding:1px 6px;font-size:11px;margin-left:4px">0</span></button>
+  </div>
+
+  <div class="content">
+
+    <!-- ASISTENTE -->
+    <div class="panel active" id="panel-asistente">
+      <div class="chat-layout">
+        <div class="card">
+          <div class="card-title"><i class="ti ti-user" style="font-size:14px; vertical-align:-1px; margin-right:4px" aria-hidden="true"></i>Mensaje de la clienta</div>
+          <textarea id="client-msg" placeholder="Pegá acá el mensaje que te mandó la clienta...
+Ej: Hola! tienen la campera de jean en talle M? cuánto sale?" rows="6"></textarea>
+          <div style="display:flex; justify-content:flex-end; margin-top:8px;">
+            <button class="btn btn-primary" onclick="generateResponse()">
+              <i class="ti ti-sparkles" style="font-size:14px; vertical-align:-1px; margin-right:4px" aria-hidden="true"></i>
+              Generar respuesta
+            </button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title"><i class="ti ti-robot" style="font-size:14px; vertical-align:-1px; margin-right:4px" aria-hidden="true"></i>Respuesta sugerida</div>
+          <div class="response-box" id="response-box">
+            <span class="response-placeholder">La respuesta aparecerá aquí, lista para copiar y enviar.</span>
+          </div>
+          <div class="copy-row">
+            <button class="btn btn-sm" onclick="clearAll()"><i class="ti ti-trash" style="font-size:13px; vertical-align:-1px" aria-hidden="true"></i> Limpiar</button>
+            <button class="btn btn-sm btn-primary" onclick="copyResponse()"><i class="ti ti-copy" style="font-size:13px; vertical-align:-1px" aria-hidden="true"></i> Copiar</button>
+          </div>
+        </div>
+      </div>
+      <div id="copy-toast" style="display:none; text-align:center; color:var(--color-text-success); font-size:13px; margin-top:8px;">
+        <i class="ti ti-check" aria-hidden="true"></i> ¡Copiado al portapapeles!
+      </div>
+    </div>
+
+    <!-- PRODUCTOS -->
+    <div class="panel" id="panel-productos">
+      <div class="add-product-form">
+        <div class="section-header">
+          <div class="section-title"><i class="ti ti-plus" style="font-size:14px; vertical-align:-1px; margin-right:4px" aria-hidden="true"></i>Agregar producto</div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Nombre del producto *</label>
+            <input type="text" id="p-name" placeholder="Ej: Campera de jean oversize">
+          </div>
+          <div class="form-group">
+            <label>Precio ($) *</label>
+            <input type="number" id="p-price" placeholder="Ej: 25000">
+          </div>
+          <div class="form-group">
+            <label>Talles disponibles</label>
+            <input type="text" id="p-sizes" placeholder="Ej: XS, S, M, L, XL">
+          </div>
+          <div class="form-group">
+            <label>Colores disponibles</label>
+            <input type="text" id="p-colors" placeholder="Ej: Negro, Blanco, Azul">
+          </div>
+          <div class="form-group">
+            <label>Stock</label>
+            <input type="number" id="p-stock" placeholder="Ej: 15">
+          </div>
+          <div class="form-group">
+            <label>Categoría</label>
+            <input type="text" id="p-category" placeholder="Ej: Camperas, Remeras...">
+          </div>
+          <div class="form-group full">
+            <label>Descripción</label>
+            <input type="text" id="p-desc" placeholder="Ej: Campera de jean oversize con bolsillos, ideal para look casual">
+          </div>
+        </div>
+        <div style="display:flex; justify-content:flex-end; margin-top:12px;">
+          <button class="btn btn-primary" onclick="addProduct()">
+            <i class="ti ti-plus" style="font-size:13px; vertical-align:-1px; margin-right:4px" aria-hidden="true"></i>
+            Agregar producto
+          </button>
+        </div>
+      </div>
+
+      <div class="section-header">
+        <div class="section-title">Catálogo (<span id="product-count">0</span> productos)</div>
+      </div>
+      <div class="products-grid" id="products-grid">
+        <div class="empty-state" style="grid-column:1/-1">
+          <i class="ti ti-shirt" style="font-size:32px; display:block; margin-bottom:8px; opacity:0.3" aria-hidden="true"></i>
+          Todavía no hay productos. ¡Agregá el primero!
+        </div>
+      </div>
+    </div>
+
+    <!-- INFO TIENDA -->
+    <div class="panel" id="panel-tienda">
+      <div class="info-grid">
+        <div class="info-section">
+          <div class="info-section-title"><i class="ti ti-clock" aria-hidden="true"></i>Horarios</div>
+          <div class="info-field">
+            <div class="info-label">Días y horarios de atención</div>
+            <textarea id="s-horarios" style="min-height:80px" placeholder="Ej: Lunes a viernes 10 a 19hs, Sábados 10 a 14hs. Domingos cerrado."></textarea>
+          </div>
+        </div>
+        <div class="info-section">
+          <div class="info-section-title"><i class="ti ti-credit-card" aria-hidden="true"></i>Métodos de pago</div>
+          <div class="info-field">
+            <div class="info-label">Formas de pago aceptadas</div>
+            <textarea id="s-pagos" style="min-height:80px" placeholder="Ej: Efectivo, Transferencia bancaria, MercadoPago, tarjetas de débito y crédito."></textarea>
+          </div>
+        </div>
+        <div class="info-section">
+          <div class="info-section-title"><i class="ti ti-truck" aria-hidden="true"></i>Envíos</div>
+          <div class="info-field">
+            <div class="info-label">Política de envíos</div>
+            <textarea id="s-envios" style="min-height:80px" placeholder="Ej: Envíos a todo el país por Correo Argentino y OCA. Envío gratis en compras mayores a $30.000. Entrega en 3 a 5 días hábiles."></textarea>
+          </div>
+        </div>
+        <div class="info-section">
+          <div class="info-section-title"><i class="ti ti-refresh" aria-hidden="true"></i>Cambios y devoluciones</div>
+          <div class="info-field">
+            <div class="info-label">Política de cambios</div>
+            <textarea id="s-cambios" style="min-height:80px" placeholder="Ej: Cambios hasta 30 días con ticket de compra. Solo por talle o color, no se devuelve dinero. La prenda debe estar sin uso y con etiqueta."></textarea>
+          </div>
+        </div>
+        <div class="info-section" style="grid-column:1/-1">
+          <div class="info-section-title"><i class="ti ti-building-store" aria-hidden="true"></i>Nombre de la tienda</div>
+          <div class="form-grid" style="grid-template-columns: 1fr 1fr;">
+            <div class="info-field">
+              <div class="info-label">Nombre</div>
+              <input type="text" id="s-name" placeholder="Ej: Moda Femenina Clara">
+            </div>
+            <div class="info-field">
+              <div class="info-label">Tono / estilo de la tienda</div>
+              <input type="text" id="s-tono" placeholder="Ej: juvenil, moderno, accesible">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="save-row">
+        <button class="btn btn-primary" onclick="saveStoreInfo()">
+          <i class="ti ti-device-floppy" style="font-size:13px; vertical-align:-1px; margin-right:4px" aria-hidden="true"></i>
+          Guardar información
+        </button>
+      </div>
+      <div id="save-toast" style="display:none; text-align:right; color:var(--color-text-success); font-size:13px; margin-top:8px;">
+        <i class="ti ti-check" aria-hidden="true"></i> ¡Guardado correctamente!
+      </div>
+    </div>
+
+    <!-- HISTORIAL -->
+    <div class="panel" id="panel-historial">
+      <div class="section-header">
+        <div class="section-title">Consultas guardadas</div>
+        <button class="btn btn-sm" onclick="clearHistory()"><i class="ti ti-trash" style="font-size:13px; vertical-align:-1px" aria-hidden="true"></i> Limpiar todo</button>
+      </div>
+      <div class="history-list" id="history-list">
+        <div class="empty-state">
+          <i class="ti ti-inbox" style="font-size:32px; display:block; margin-bottom:8px; opacity:0.3" aria-hidden="true"></i>
+          Todavía no hay consultas guardadas.
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let products = JSON.parse(localStorage.getItem('products') || '[]');
+let storeInfo = JSON.parse(localStorage.getItem('storeInfo') || '{}');
+let history = JSON.parse(localStorage.getItem('queryHistory') || '[]');
+let currentResponse = '';
+
+function showTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  event.target.closest('.tab').classList.add('active');
+  document.getElementById('panel-' + tab).classList.add('active');
+  if (tab === 'historial') renderHistory();
+}
+
+function addProduct() {
+  const name = document.getElementById('p-name').value.trim();
+  const price = document.getElementById('p-price').value.trim();
+  if (!name || !price) { alert('El nombre y el precio son obligatorios.'); return; }
+  const product = {
+    id: Date.now(),
+    name,
+    price: Number(price),
+    sizes: document.getElementById('p-sizes').value.trim(),
+    colors: document.getElementById('p-colors').value.trim(),
+    stock: Number(document.getElementById('p-stock').value) || 0,
+    category: document.getElementById('p-category').value.trim(),
+    desc: document.getElementById('p-desc').value.trim()
+  };
+  products.push(product);
+  localStorage.setItem('products', JSON.stringify(products));
+  ['p-name','p-price','p-sizes','p-colors','p-stock','p-category','p-desc'].forEach(id => document.getElementById(id).value = '');
+  renderProducts();
+}
+
+function renderProducts() {
+  const grid = document.getElementById('products-grid');
+  document.getElementById('product-count').textContent = products.length;
+  if (!products.length) {
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><i class="ti ti-shirt" style="font-size:32px;display:block;margin-bottom:8px;opacity:0.3"></i>Todavía no hay productos.</div>';
+    return;
+  }
+  grid.innerHTML = products.map(p => {
+    const stockClass = p.stock > 10 ? 'stock-ok' : p.stock > 0 ? 'stock-low' : 'stock-out';
+    const stockLabel = p.stock > 10 ? 'En stock' : p.stock > 0 ? `Solo ${p.stock} unidades` : 'Sin stock';
+    return `<div class="product-card">
+      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:4px">
+        <div class="product-name">${p.name}</div>
+        <button class="btn btn-sm" style="padding:2px 6px;font-size:11px;color:var(--color-text-danger)" onclick="deleteProduct(${p.id})"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="product-price">$${p.price.toLocaleString('es-AR')}</div>
+      <div class="product-tags">
+        ${p.sizes ? `<span class="tag"><i class="ti ti-ruler" style="font-size:10px"></i> ${p.sizes}</span>` : ''}
+        ${p.colors ? `<span class="tag">${p.colors}</span>` : ''}
+        ${p.category ? `<span class="tag">${p.category}</span>` : ''}
+        <span class="stock-badge ${stockClass}">${stockLabel}</span>
+      </div>
+      ${p.desc ? `<div class="product-desc">${p.desc}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function deleteProduct(id) {
+  products = products.filter(p => p.id !== id);
+  localStorage.setItem('products', JSON.stringify(products));
+  renderProducts();
+}
+
+function saveStoreInfo() {
+  storeInfo = {
+    name: document.getElementById('s-name').value.trim(),
+    horarios: document.getElementById('s-horarios').value.trim(),
+    pagos: document.getElementById('s-pagos').value.trim(),
+    envios: document.getElementById('s-envios').value.trim(),
+    cambios: document.getElementById('s-cambios').value.trim(),
+    tono: document.getElementById('s-tono').value.trim()
+  };
+  localStorage.setItem('storeInfo', JSON.stringify(storeInfo));
+  if (storeInfo.name) {
+    document.getElementById('store-badge').textContent = storeInfo.name;
+  }
+  const toast = document.getElementById('save-toast');
+  toast.style.display = 'block';
+  setTimeout(() => toast.style.display = 'none', 2500);
+}
+
+function loadStoreInfo() {
+  if (storeInfo.name) { document.getElementById('s-name').value = storeInfo.name; document.getElementById('store-badge').textContent = storeInfo.name; }
+  if (storeInfo.horarios) document.getElementById('s-horarios').value = storeInfo.horarios;
+  if (storeInfo.pagos) document.getElementById('s-pagos').value = storeInfo.pagos;
+  if (storeInfo.envios) document.getElementById('s-envios').value = storeInfo.envios;
+  if (storeInfo.cambios) document.getElementById('s-cambios').value = storeInfo.cambios;
+  if (storeInfo.tono) document.getElementById('s-tono').value = storeInfo.tono;
+}
+
+function buildSystemPrompt() {
+  const catalogText = products.length > 0
+    ? products.map(p => `- ${p.name}: $${p.price.toLocaleString('es-AR')}${p.sizes ? ', Talles: '+p.sizes : ''}${p.colors ? ', Colores: '+p.colors : ''}${p.stock !== undefined ? ', Stock: '+p.stock : ''}${p.desc ? '. '+p.desc : ''}`).join('\n')
+    : 'No hay productos cargados aún.';
+
+  return `Sos el asistente de ventas de ${storeInfo.name || 'la tienda'}${storeInfo.tono ? ', con un tono ' + storeInfo.tono : ''}.
+Tu objetivo es responder consultas de clientas de forma amable, breve y vendedora, como si fueras la dueña de la tienda respondiendo por WhatsApp.
+
+CATÁLOGO ACTUAL:
+${catalogText}
+
+INFORMACIÓN DE LA TIENDA:
+- Horarios: ${storeInfo.horarios || 'No especificado'}
+- Métodos de pago: ${storeInfo.pagos || 'No especificado'}
+- Envíos: ${storeInfo.envios || 'No especificado'}
+- Política de cambios: ${storeInfo.cambios || 'No especificado'}
+
+REGLAS IMPORTANTES:
+1. Respondé siempre en español rioplatense (vos, che, etc.)
+2. Sé breve y amable. Máximo 4-5 líneas.
+3. Si no tenés la información exacta, decí "Te consulto y te aviso en un momento!" — NUNCA inventes precios, talles o stock que no estén en el catálogo.
+4. Usá emojis con moderación (máximo 2-3 por respuesta).
+5. Siempre intentá generar interés o cerrar la venta si es posible.
+6. Si preguntan por algo que no está en el catálogo, decí que lo vas a chequear.
+7. La respuesta debe estar lista para ser copiada y enviada directamente.`;
+}
+
+async function generateResponse() {
+  const msg = document.getElementById('client-msg').value.trim();
+  if (!msg) { alert('Escribí o pegá el mensaje de la clienta primero.'); return; }
+
+  const box = document.getElementById('response-box');
+  box.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div> Generando respuesta...';
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: buildSystemPrompt(),
+        messages: [{ role: 'user', content: msg }]
+      })
+    });
+    const data = await response.json();
+    currentResponse = data.content?.[0]?.text || 'No se pudo generar una respuesta.';
+    box.textContent = currentResponse;
+    saveToHistory(msg, currentResponse);
+    updateHistoryCount();
+  } catch (err) {
+    box.textContent = 'Error al conectar con la IA. Verificá tu conexión e intentá de nuevo.';
+    console.error(err);
+  }
+}
+
+function copyResponse() {
+  if (!currentResponse) return;
+  navigator.clipboard.writeText(currentResponse).then(() => {
+    const toast = document.getElementById('copy-toast');
+    toast.style.display = 'block';
+    setTimeout(() => toast.style.display = 'none', 2000);
+  });
+}
+
+function clearAll() {
+  document.getElementById('client-msg').value = '';
+  document.getElementById('response-box').innerHTML = '<span class="response-placeholder">La respuesta aparecerá aquí, lista para copiar y enviar.</span>';
+  currentResponse = '';
+}
+
+function saveToHistory(query, response) {
+  const entry = { id: Date.now(), query, response, time: new Date().toLocaleString('es-AR') };
+  history.unshift(entry);
+  if (history.length > 100) history = history.slice(0, 100);
+  localStorage.setItem('queryHistory', JSON.stringify(history));
+}
+
+function renderHistory() {
+  const list = document.getElementById('history-list');
+  if (!history.length) {
+    list.innerHTML = '<div class="empty-state"><i class="ti ti-inbox" style="font-size:32px;display:block;margin-bottom:8px;opacity:0.3"></i>Todavía no hay consultas guardadas.</div>';
+    return;
+  }
+  list.innerHTML = history.map(h => `
+    <div class="history-item" onclick="loadFromHistory(${h.id})">
+      <div class="history-meta">
+        <span style="font-size:12px;font-weight:500;color:var(--color-text-secondary)">Consulta</span>
+        <span class="history-time">${h.time}</span>
+      </div>
+      <div class="history-preview">👤 ${h.query}</div>
+      <div class="history-preview" style="margin-top:3px">🤖 ${h.response}</div>
+    </div>
+  `).join('');
+}
+
+function loadFromHistory(id) {
+  const entry = history.find(h => h.id === id);
+  if (!entry) return;
+  showTab({ target: document.querySelector('.tab') }, 'asistente');
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelector('.tab').classList.add('active');
+  document.getElementById('panel-asistente').classList.add('active');
+  document.getElementById('client-msg').value = entry.query;
+  document.getElementById('response-box').textContent = entry.response;
+  currentResponse = entry.response;
+}
+
+function clearHistory() {
+  if (!confirm('¿Segura que querés borrar todo el historial?')) return;
+  history = [];
+  localStorage.setItem('queryHistory', JSON.stringify(history));
+  renderHistory();
+  updateHistoryCount();
+}
+
+function updateHistoryCount() {
+  document.getElementById('history-count').textContent = history.length;
+}
+
+loadStoreInfo();
+renderProducts();
+updateHistoryCount();
+</script>
+</body>
+</html>
